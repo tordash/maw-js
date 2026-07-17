@@ -42,8 +42,21 @@ async function checkPeerReachable(url: string): Promise<{ reachable: boolean; la
  */
 export function getPeers(): string[] {
   const config = loadConfig();
-  const flat = config.peers ?? [];
-  const named = (config.namedPeers ?? []).map(p => p.url);
+  const localNode = config.node;
+  const localPort = config.port;
+  const isSelfUrl = (url: string) => {
+    try {
+      const u = new URL(url);
+      const port = Number(u.port || (u.protocol === "https:" ? 443 : 80));
+      return port === localPort && ["localhost", "127.0.0.1", "0.0.0.0"].includes(u.hostname);
+    } catch {
+      return false;
+    }
+  };
+  const flat = (config.peers ?? []).filter(url => !isSelfUrl(url));
+  const named = (config.namedPeers ?? [])
+    .filter(p => p.name !== localNode && !isSelfUrl(p.url))
+    .map(p => p.url);
   const seen = new Set<string>();
   const merged: string[] = [];
   for (const url of [...flat, ...named]) {

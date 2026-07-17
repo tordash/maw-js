@@ -87,4 +87,25 @@ describe("getPeers — merges peers[] and namedPeers[]", () => {
     expect(result).toContain("http://mba.wg:3457");
     expect(result).toContain("http://clinic.wg:3457");
   });
+
+  test("named self-peer by node name is excluded from remote peers", () => {
+    mockConfig = {
+      node: "mac-tor",
+      port: 3456,
+      namedPeers: [
+        { name: "mac-tor", url: "http://localhost:3456" },
+        { name: "mba", url: "http://mba.wg:3456" },
+      ],
+    };
+    expect(getPeers()).toEqual(["http://mba.wg:3456"]);
+  });
+
+  test("loopback URL at local port is excluded from flat peers", () => {
+    mockConfig = {
+      node: "mac-tor",
+      port: 3456,
+      peers: ["http://127.0.0.1:3456", "http://white.wg:3456"],
+    };
+    expect(getPeers()).toEqual(["http://white.wg:3456"]);
+  });
 });
